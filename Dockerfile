@@ -30,7 +30,6 @@ FROM scratch
 ARG MODULE_NAME
 ARG APP_NAME
 
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 # Copy our static executable.
 COPY --from=builder /app/bin/${APP_NAME} /
 COPY --from=builder /app/${MODULE_NAME}/configs /configs

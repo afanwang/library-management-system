@@ -75,8 +75,9 @@ func SetupRoutes(router *httprouter.Router, dbc *adaptor.PostgresClient, log *lo
 	router.POST("/return/:user_id/:book_id", handler.ReturnBookHandler(dbc, log))
 	router.POST("/return/:user_id", handler.ViewBorrowedBooksHandler(dbc, log))
 
-	// Login handlers
+	// User handlers
 	router.POST("/login", handler.LoginHandler(dbc, log))
+	router.POST("/signup", handler.RegisterHandler(dbc, log))
 }
 
 // parseConfig parses the config file and returns the config object

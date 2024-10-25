@@ -1,8 +1,9 @@
-# Library management system
+# Part 1
+## Library management system
 
 See the detailed list of features and their progress.
 
-# Design
+## Design
 1. DB Model:  Start with data models before the logic layers. I used Golang `sqlc` (https://github.com/rubenv/sql-migrate) to generate the postgreSQL code.
    Build an interface for the Model logic, so the DB layer can easily mocked by `pgxmock` unit-test.
 
@@ -15,6 +16,8 @@ See the detailed list of features and their progress.
 5. Some utility function:
 - Added a Makefile for repeated commands.
 - Addd a dockerfile for the service.
+
+6. Use Web3 for registration and login. I am thinking of using Ethereum or Web3 library for signature verification. [Reference](https://www.dock.io/post/web3-authentication)
 
 | **Module**         | **Feature**               | **Status**    |
 |---------------------|---------------------------|---------------|
@@ -45,6 +48,12 @@ See the detailed list of features and their progress.
 |                     | Unit Tests test                | ❌ Not Done    |
 
 
-## Manual Tests
+### Manual Tests
 
-## Unit tests
+### Unit tests
+
+
+# Part 2
+| **Module**         | **Feature**               | **Status**    |
+|---------------------|---------------------------|---------------|
+|                     |                 | ❌ Not Started    |

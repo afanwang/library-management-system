@@ -120,7 +120,17 @@ func handleLogin(db *adaptor.PostgresClient, w http.ResponseWriter, r *http.Requ
 }
 
 // RegisterHandler handles user registration.
-func RegisterHandler(db *adaptor.PostgresClient, w http.ResponseWriter, r *http.Request) {
+func RegisterHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		handleRegister(dbc, w, r)
+	}
+}
+
+func handleRegister(db *adaptor.PostgresClient, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)

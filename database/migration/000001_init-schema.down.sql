@@ -1,1 +1,5 @@
-DROP TABLE IF EXISTS applicant_documents;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS books;
+DROP TABLE IF EXISTS authors;
+DROP TABLE IF EXISTS book_authors;
+
