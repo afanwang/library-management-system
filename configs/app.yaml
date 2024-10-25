@@ -1,0 +1,3 @@
+# Config file for a Sample HTTP Server in Golang
+appName: "A Sample Library Management Server in Golang"
+port: 8080
