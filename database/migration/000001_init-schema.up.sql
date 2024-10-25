@@ -1,8 +1,10 @@
 -- User represent a registered user in the system
+-- Login is using email + password (v1)
+-- Will change to web3 for authentication after v1
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    "name" VARCHAR(255),
     "email" VARCHAR(255) UNIQUE NOT NULL,
+    "name" VARCHAR(255),
     -- role = admin or user
     "role" VARCHAR(10) NOT NULL,
     -- TODO: change to web3 for authentication

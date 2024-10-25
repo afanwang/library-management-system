@@ -55,12 +55,28 @@ func (config *appConfig) Validate() error {
 }
 
 func SetupRoutes(router *httprouter.Router, dbc *adaptor.PostgresClient, log *log.Logger) {
-	router.POST("/books", handler.CreateBookHandler(dbc, log))
-	router.GET("/books", handler.GetBooksHandler(dbc, log))
-	router.PUT("/books/:id", handler.UpdateBookHandler(dbc, log))
-	router.DELETE("/books/:id", handler.DeleteBookHandler(dbc, log))
+	// Book handlers with middleware for Role-based authorization
+	router.Handler("POST", "/books/:book_id", handler.JWTAuthMiddleware(
+		handler.Adapt(handler.AddANewBookHandler(dbc, log)),
+	))
+
+	router.Handler("PUT", "/books/:book_id", handler.JWTAuthMiddleware(
+		handler.Adapt(handler.UpdateBookHandler(dbc, log)),
+	))
+
+	router.Handler("DELETE", "/books/:book_id", handler.JWTAuthMiddleware(
+		handler.Adapt(handler.DeleteBookHandler(dbc, log)),
+	))
+
+	// None-role-based handlers
+	router.POST("/books", handler.GetAllBooksHandler(dbc, log))
+	router.PUT("/books/:book_id", handler.BorrowBookHandler(dbc, log))
 	router.POST("/borrow/:user_id/:book_id", handler.BorrowBookHandler(dbc, log))
 	router.POST("/return/:user_id/:book_id", handler.ReturnBookHandler(dbc, log))
+	router.POST("/return/:user_id", handler.ViewBorrowedBooksHandler(dbc, log))
+
+	// Login handlers
+	router.POST("/login", handler.LoginHandler(dbc, log))
 }
 
 // parseConfig parses the config file and returns the config object

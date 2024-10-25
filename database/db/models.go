@@ -36,8 +36,8 @@ type BorrowedBook struct {
 
 type User struct {
 	ID           int32
-	Name         pgtype.Text
 	Email        string
+	Name         pgtype.Text
 	Role         string
 	PasswordHash string
 }

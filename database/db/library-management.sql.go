@@ -55,6 +55,43 @@ func (q *Queries) BorrowBook(ctx context.Context, id int32) error {
 	return err
 }
 
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (name, email, role, password_hash) 
+VALUES ($1, $2, $3, $4)
+RETURNING id, name, email, role
+`
+
+type CreateUserParams struct {
+	Name         pgtype.Text
+	Email        string
+	Role         string
+	PasswordHash string
+}
+
+type CreateUserRow struct {
+	ID    int32
+	Name  pgtype.Text
+	Email string
+	Role  string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
+	row := q.db.QueryRow(ctx, createUser,
+		arg.Name,
+		arg.Email,
+		arg.Role,
+		arg.PasswordHash,
+	)
+	var i CreateUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Role,
+	)
+	return i, err
+}
+
 const deleteBook = `-- name: DeleteBook :exec
 DELETE FROM books
 WHERE id = $1
@@ -102,6 +139,25 @@ func (q *Queries) GetAvailableCopies(ctx context.Context, id int32) (int32, erro
 	var num_copy int32
 	err := row.Scan(&num_copy)
 	return num_copy, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, email, name, role, password_hash
+FROM users 
+WHERE email = $1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.Role,
+		&i.PasswordHash,
+	)
+	return i, err
 }
 
 const insertBorrowedBook = `-- name: InsertBorrowedBook :exec

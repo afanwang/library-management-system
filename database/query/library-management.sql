@@ -58,3 +58,13 @@ SELECT b.id, b.title, b.description, bb.borrowed_at, bb.returned_at
 FROM borrowed_books bb
 JOIN books b ON bb.book_id = b.id
 WHERE bb.user_id = $1 AND bb.returned_at IS NULL;
+
+-- name: GetUserByEmail :one
+SELECT id, email, name, role, password_hash
+FROM users 
+WHERE email = $1;
+
+-- name: CreateUser :one
+INSERT INTO users (name, email, role, password_hash) 
+VALUES ($1, $2, $3, $4)
+RETURNING id, name, email, role;

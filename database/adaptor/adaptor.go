@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // DBConnection interface
@@ -179,4 +180,15 @@ func (p *PostgresClient) BorrowBook(ctx context.Context, userID int32, bookID in
 
 func (p *PostgresClient) ListBorrowedBooks(ctx context.Context, userID int32) ([]db.ListBorrowedBooksRow, error) {
 	return p.queries.ListBorrowedBooks(ctx, userID)
+}
+
+func (p *PostgresClient) GetUserByEmail(ctx context.Context, email string) (db.User, error) {
+	return p.queries.GetUserByEmail(ctx, email)
+}
+
+func (p *PostgresClient) CreateUser(ctx context.Context, name string, email string, role string, passwordhash string) error {
+	return p.execTx(ctx, func(q *db.Queries) error {
+		_, err := q.CreateUser(ctx, db.CreateUserParams{Name: pgtype.Text{String: name, Valid: true}, Email: email, Role: role, PasswordHash: passwordhash})
+		return err
+	})
 }

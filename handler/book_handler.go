@@ -4,7 +4,6 @@ import (
 	"app/database/adaptor"
 	"app/database/db"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,55 +14,15 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// Error codes
-const (
-	ContentTypeKey     = "Content-Type"
-	ContentTypeJSON    = "application/json"
-	ContentTypeHTML    = "text/html"
-	InvalidContentType = "invalid content type"
-	TempThreshold      = 90.0
-	// `%Y/%m/%d %H:%M:%S`
-	TimeLayout = "2006/01/02 15:04:05"
-)
-
-// EpochStrToFormatted converts epoch string to formatted string.
-func EpochStrToFormatted(epochStr string) (string, error) {
-	epoch, err := strconv.ParseInt(epochStr, 10, 64)
-	if err != nil || epoch == 0 {
-		return "", errors.New("Invalid utime for conversion")
+// NewServer creates a new HTTP server
+func NewServer(port int, router http.Handler) *http.Server {
+	server := http.Server{
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 60 * time.Second,
+		Addr:         fmt.Sprintf(":%d", port),
+		Handler:      router,
 	}
-
-	t := time.Unix(0, int64(epoch)*int64(time.Millisecond))
-
-	return t.Format(TimeLayout), nil
-}
-
-// Handler is the interface for all handlers.
-func errorHandler(
-	errMsg string,
-	reasonErrMsg error,
-	httpErrorStatus int,
-	traceID string,
-	log *log.Logger,
-	w http.ResponseWriter,
-) {
-	var logError = errMsg
-	if reasonErrMsg != nil {
-		logError = fmt.Sprintf("%s Reason: %v", errMsg, reasonErrMsg)
-	}
-	log.Printf("Err: %s", logError)
-	http.Error(w, errMsg, httpErrorStatus)
-}
-
-// ErrorHandler prints the error message and returns the error status.
-func ErrorHandler(errMsg string, reasonErrMsg error, httpErrorStatus int,
-	log *log.Logger, w http.ResponseWriter) {
-	var logError = errMsg
-	if reasonErrMsg != nil {
-		logError = fmt.Sprintf("%s Reason: %v", errMsg, reasonErrMsg)
-	}
-	log.Printf("Error: %s", logError)
-	http.Error(w, errMsg, httpErrorStatus)
+	return &server
 }
 
 // PanicHandler prints the stack trace and returns the error status.
@@ -77,17 +36,6 @@ func NewRouter() *httprouter.Router {
 	router := httprouter.New()
 	router.PanicHandler = panicHandler
 	return router
-}
-
-// NewServer creates a new HTTP server
-func NewServer(port int, router http.Handler) *http.Server {
-	server := http.Server{
-		ReadTimeout:  60 * time.Second,
-		WriteTimeout: 60 * time.Second,
-		Addr:         fmt.Sprintf(":%d", port),
-		Handler:      router,
-	}
-	return &server
 }
 
 // AddANewBookHandler handles the creation of a new book.
