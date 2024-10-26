@@ -70,6 +70,11 @@ type RegisterRequest struct {
 
 func LoginHandler(dbc *adaptor.PostgresClient, a auth.Authenticator, log *log.Logger) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		if !limiter.Allow() {
+			http.Error(w, "Too many requests", http.StatusTooManyRequests)
+			return
+		}
+
 		handleLogin(dbc, a, w, r)
 	}
 }
@@ -122,6 +127,11 @@ func handleLogin(db *adaptor.PostgresClient, a auth.Authenticator, w http.Respon
 // RegisterHandler handles user registration.
 func RegisterHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		if !limiter.Allow() {
+			http.Error(w, "Too many requests", http.StatusTooManyRequests)
+			return
+		}
+
 		handleRegister(dbc, w, r)
 	}
 }

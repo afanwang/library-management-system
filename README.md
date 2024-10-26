@@ -18,6 +18,8 @@ See the detailed list of features and their progress.
 - Addd a dockerfile for the service.
 
 6. Use Web3 for registration and login. I am thinking of using Ethereum or Web3 library for signature verification. [Reference](https://www.dock.io/post/web3-authentication)
+- User provides their Ethereum address, server responds with a nonce tied to the user, and user signs the nonce with their Ethereum private key. Client sends the signature to the server, server verifies the signature and authenticates the user.
+- Added an interface to support Password-auth and Web3 auth.
 
 | **Module**         | **Feature**               | **Status**    |
 |---------------------|---------------------------|---------------|
@@ -43,8 +45,8 @@ See the detailed list of features and their progress.
 | **Documentation** |Documentation of Setup and Test     | ❌ Not Done        |
 | **Test**  | Write Simple Test       |❌ Not Done        |
 | **Bonus Features**  
-|                     | API Rate Limiting         | ❌ Not Done    |
-|                     | User Registration/Ligin using Web3              | ❌ Not Done    |
+|                     | API Rate Limiting         | ✅ Done      |
+|                     | User Registration/Ligin using Web3              | ✅ Done     |
 |                     | Unit Tests test                | ❌ Not Done    |
 
 

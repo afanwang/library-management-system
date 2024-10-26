@@ -12,7 +12,10 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/time/rate"
 )
+
+var limiter = rate.NewLimiter(1, 5) // 1 request per second, burst of 5
 
 // NewServer creates a new HTTP server
 func NewServer(port int, router http.Handler) *http.Server {
@@ -41,6 +44,11 @@ func NewRouter() *httprouter.Router {
 // AddANewBookHandler handles the creation of a new book.
 func AddANewBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		if !limiter.Allow() {
+			http.Error(w, "Too many requests", http.StatusTooManyRequests)
+			return
+		}
+
 		var book db.AddBookParams
 		if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
 			http.Error(w, "Invalid request payload", http.StatusBadRequest)
@@ -60,6 +68,11 @@ func AddANewBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter
 // UpdateBookHandler updates the details of a book.
 func UpdateBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		if !limiter.Allow() {
+			http.Error(w, "Too many requests", http.StatusTooManyRequests)
+			return
+		}
+
 		bookID, err := strconv.Atoi(ps.ByName("id"))
 		if err != nil {
 			http.Error(w, "Invalid book ID", http.StatusBadRequest)
@@ -85,6 +98,11 @@ func UpdateBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.
 // BorrowBookHandler handles borrowing a book.
 func BorrowBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		if !limiter.Allow() {
+			http.Error(w, "Too many requests", http.StatusTooManyRequests)
+			return
+		}
+
 		userID, err := strconv.Atoi(ps.ByName("user_id"))
 		if err != nil {
 			http.Error(w, "Invalid user ID", http.StatusBadRequest)
@@ -111,6 +129,11 @@ func BorrowBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.
 // DeleteBookHandler deletes a book by ID.
 func DeleteBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		if !limiter.Allow() {
+			http.Error(w, "Too many requests", http.StatusTooManyRequests)
+			return
+		}
+
 		bookID, err := strconv.Atoi(ps.ByName("id"))
 		if err != nil {
 			http.Error(w, "Invalid book ID", http.StatusBadRequest)
@@ -129,6 +152,11 @@ func DeleteBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.
 // ReturnBookHandler handles returning a borrowed book.
 func ReturnBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		if !limiter.Allow() {
+			http.Error(w, "Too many requests", http.StatusTooManyRequests)
+			return
+		}
+
 		userID, err := strconv.Atoi(ps.ByName("user_id"))
 		if err != nil {
 			http.Error(w, "Invalid user ID", http.StatusBadRequest)
@@ -153,6 +181,11 @@ func ReturnBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.
 // GetBooksHandler retrieves all books.
 func GetAllBooksHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		if !limiter.Allow() {
+			http.Error(w, "Too many requests", http.StatusTooManyRequests)
+			return
+		}
+
 		books, err := dbc.ListBooks(r.Context())
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error fetching books: %v", err), http.StatusInternalServerError)
@@ -166,6 +199,11 @@ func GetAllBooksHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter
 
 func ViewBorrowedBooksHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		if !limiter.Allow() {
+			http.Error(w, "Too many requests", http.StatusTooManyRequests)
+			return
+		}
+
 		userID, err := strconv.Atoi(ps.ByName("user_id"))
 		if err != nil {
 			http.Error(w, "Invalid user ID", http.StatusBadRequest)
