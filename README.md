@@ -58,4 +58,4 @@ See the detailed list of features and their progress.
 # Part 2
 | **Module**         | **Feature**               | **Status**    |
 |---------------------|---------------------------|---------------|
-|                     |                 | ❌ Not Started    |
+|                     |                 | Inprogress  |
