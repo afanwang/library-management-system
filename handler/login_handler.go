@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"app/auth"
 	"app/database/adaptor"
 	"context"
 	"encoding/json"
@@ -38,7 +39,7 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 		claims := &Claims{}
 
 		token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
-			return jwtKey, nil
+			return auth.JwtKey, nil
 		})
 
 		if err != nil || !token.Valid {
@@ -60,11 +61,6 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 type RegisterRequest struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
@@ -72,23 +68,27 @@ type RegisterRequest struct {
 	Role     string `json:"role"` // admin or user
 }
 
-var jwtKey = []byte("your-secret-key")
-
-func LoginHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.Handle {
+func LoginHandler(dbc *adaptor.PostgresClient, a auth.Authenticator, log *log.Logger) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		handleLogin(dbc, w, r)
+		handleLogin(dbc, a, w, r)
 	}
 }
 
-func handleLogin(db *adaptor.PostgresClient, w http.ResponseWriter, r *http.Request) {
-	var req LoginRequest
+func handleLogin(db *adaptor.PostgresClient, a auth.Authenticator, w http.ResponseWriter, r *http.Request) {
+	var req auth.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
 	user, err := db.GetUserByEmail(r.Context(), req.Email)
-	if err != nil || bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)) != nil {
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	_, err = a.Login(r.Context(), user, req)
+	if err != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
@@ -103,15 +103,15 @@ func handleLogin(db *adaptor.PostgresClient, w http.ResponseWriter, r *http.Requ
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(jwtKey)
+	cookieToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := cookieToken.SignedString(auth.JwtKey)
 	if err != nil {
 		http.Error(w, "Error creating token", http.StatusInternalServerError)
 		return
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:    "token",
+		Name:    "cookieToken",
 		Value:   tokenString,
 		Expires: expirationTime,
 	})

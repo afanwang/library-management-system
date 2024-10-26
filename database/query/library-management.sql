@@ -60,7 +60,7 @@ JOIN books b ON bb.book_id = b.id
 WHERE bb.user_id = $1 AND bb.returned_at IS NULL;
 
 -- name: GetUserByEmail :one
-SELECT id, email, name, role, password_hash
+SELECT id, email, name, role, password_hash, nonce
 FROM users 
 WHERE email = $1;
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"app/auth"
 	"app/database/adaptor"
 	handler "app/handler"
 	"context"
@@ -54,7 +55,7 @@ func (config *appConfig) Validate() error {
 	return nil
 }
 
-func SetupRoutes(router *httprouter.Router, dbc *adaptor.PostgresClient, log *log.Logger) {
+func SetupRoutes(router *httprouter.Router, dbc *adaptor.PostgresClient, auth auth.Authenticator, log *log.Logger) {
 	// Book handlers with middleware for Role-based authorization
 	router.Handler("POST", "/books/:book_id", handler.JWTAuthMiddleware(
 		handler.Adapt(handler.AddANewBookHandler(dbc, log)),
@@ -76,7 +77,7 @@ func SetupRoutes(router *httprouter.Router, dbc *adaptor.PostgresClient, log *lo
 	router.POST("/return/:user_id", handler.ViewBorrowedBooksHandler(dbc, log))
 
 	// User handlers
-	router.POST("/login", handler.LoginHandler(dbc, log))
+	router.POST("/login", handler.LoginHandler(dbc, auth, log))
 	router.POST("/signup", handler.RegisterHandler(dbc, log))
 }
 
@@ -131,9 +132,12 @@ func runMain(args []string) {
 
 	dbClient := adaptor.NewPostgresClient(dbConn)
 
+	// Setup authentication with Password OR Web3
+	auth := auth.NewAuthenticator("Password")
+
 	router := handler.NewRouter()
 
-	SetupRoutes(router, dbClient, logger)
+	SetupRoutes(router, dbClient, auth, logger)
 
 	server := handler.NewServer(config.Port, router)
 

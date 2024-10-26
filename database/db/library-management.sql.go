@@ -142,7 +142,7 @@ func (q *Queries) GetAvailableCopies(ctx context.Context, id int32) (int32, erro
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, role, password_hash
+SELECT id, email, name, role, password_hash, nonce
 FROM users 
 WHERE email = $1
 `
@@ -156,6 +156,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Name,
 		&i.Role,
 		&i.PasswordHash,
+		&i.Nonce,
 	)
 	return i, err
 }

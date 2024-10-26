@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
     -- role = admin or user
     "role" VARCHAR(10) NOT NULL,
     -- TODO: change to web3 for authentication
-    password_hash TEXT NOT NULL
+    password_hash TEXT NOT NULL,
+    "nonce" TEXT NOT NULL
 );
 
 -- Book aurhors

@@ -40,4 +40,5 @@ type User struct {
 	Name         pgtype.Text
 	Role         string
 	PasswordHash string
+	Nonce        string
 }
