@@ -6,6 +6,8 @@ See the detailed list of features and their progress.
 ## Design
 1. DB Model:  Start with data models before the logic layers. I used Golang `sqlc` (https://github.com/rubenv/sql-migrate) to generate the postgreSQL code.
    Build an interface for the Model logic, so the DB layer can easily mocked by `pgxmock` unit-test.
+   
+   Database selection and reason: I choose PostgreSQL as it is currently the most used DB and it supports [mvcc](https://www.postgresql.org/docs/7.1/mvcc.html) which has much better concurrency; In addition, PostgreSQL's extensions make it easily be suitable for any usecase in the future. Read [1000+ PostgresQL extensions](https://gist.github.com/joelonsql/e5aa27f8cc9bd22b8999b7de8aee9d47). For example, the `timescaleDB` and `pgVector` are pretty popular. 
 
 2. HTTP Handlers: Write http handler code. The handlers will use the model interface. This package uses a high performance HTTP router(https://github.com/julienschmidt/httprouter) which has better performance than the obsolete Gorilla Mux(https://github.com/gorilla/mux).
 
@@ -26,7 +28,7 @@ See the detailed list of features and their progress.
 | **Model**          		 	
 |                     | User with roles            |  ✅ Done           |		
 |                     | AddUser (registration)              |  ✅ Done          |
-|                     | Book with Authors (CRUD)               | ✅ Done        |
+|                     | Book with Authors (CRUD)               | ✅  Done        |
 |                     | BorrowBook                | ✅ Done    |
 |                     | ReturnBook                | ✅ Done   |
 | **APIs**            |       |
@@ -42,8 +44,8 @@ See the detailed list of features and their progress.
 | **RBAC to APIs** | |  |
 |                     | Only Admin can Delete Book     |  ✅ Done    |
 |                     | Only Admin can Edit Book     |  ✅ Done     |
-| **Documentation** |Documentation of Setup and Test     | ❌ Not Done        |
-| **Test**  | Write Simple Test       |❌ Not Done        |
+| **Documentation** |Documentation of Setup and Test     |  ✅ Done        |
+| **Test**  | Write Simple Test       | ✅ Done      |
 | **Bonus Features**  
 |                     | API Rate Limiting         | ✅ Done      |
 |                     | User Registration/Ligin using Web3              | ✅ Done     |
@@ -120,3 +122,9 @@ Total event counts across the block range:
 0x804c9b842b2748a22bb64b345453a3de7ca54a6ca45ce00d415894979e22897a: 13
 Time: 0h:00m:06s   
 ```
+
+## Setup
+Refer to Makefile
+
+## Test
+Refer to `api_integration_test.go`

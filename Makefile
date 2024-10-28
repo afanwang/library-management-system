@@ -4,15 +4,15 @@ PLATFORM ?= linux/amd64
 UNAME = $(shell uname -m)
 TRGT = build_$(UNAME)
 
-postgres:
 ## Need to have Docker up and running to execute the below command
+postgres:
 	docker run --name postgres -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret  -d postgres:16.4-alpine3.20
 
 docker_build:
 	docker build --platform $(PLATFORM) -t $(IMAGE_NAME):$(IMAGE_VERSION) .
 
 server:
-	go run main.go
+	go run cmd/app/main.go --config configs/app.yaml
 
 createdb:
 	docker exec -it postgres createdb --username=root --owner=root library-management

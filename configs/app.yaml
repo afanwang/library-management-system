@@ -1,3 +1,9 @@
 # Config file for a Sample HTTP Server in Golang
 appName: "A Sample Library Management Server in Golang"
 port: 8080
+postgresUser: "root"
+postgresPass: "secret"
+postgresHost: "localhost"
+postgresPort: "5432"
+postgresSSLMode: "disable"
+postgresDB: "library-management"

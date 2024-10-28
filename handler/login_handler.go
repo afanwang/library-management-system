@@ -22,6 +22,12 @@ const (
 // Adapt function to convert httprouter.Handle to http.HandlerFunc
 func Adapt(handler httprouter.Handle) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		_, err := r.Cookie("token")
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		params := httprouter.ParamsFromContext(r.Context())
 		handler(w, r, params)
 	}
@@ -54,7 +60,6 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 }
 
 // LoginHandler handles the login request.
-
 type Claims struct {
 	Email string `json:"email"`
 	Role  string `json:"role"`
@@ -148,7 +153,7 @@ func handleRegister(db *adaptor.PostgresClient, w http.ResponseWriter, r *http.R
 	}
 
 	// Basic validation
-	if strings.TrimSpace(req.Name) == "" || strings.TrimSpace(req.Email) == "" || len(req.Password) < 8 {
+	if strings.TrimSpace(req.Name) == "" || strings.TrimSpace(req.Email) == "" || len(req.Role) == 0 {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}

@@ -57,11 +57,11 @@ func (config *appConfig) Validate() error {
 
 func SetupRoutes(router *httprouter.Router, dbc *adaptor.PostgresClient, auth auth.Authenticator, log *log.Logger) {
 	// Book handlers with middleware for Role-based authorization
-	router.Handler("POST", "/books/:book_id", handler.JWTAuthMiddleware(
+	router.Handler("POST", "/admin/books/:book_id", handler.JWTAuthMiddleware(
 		handler.Adapt(handler.AddANewBookHandler(dbc, log)),
 	))
 
-	router.Handler("PUT", "/books/:book_id", handler.JWTAuthMiddleware(
+	router.Handler("PUT", "/admin/books/:book_id", handler.JWTAuthMiddleware(
 		handler.Adapt(handler.UpdateBookHandler(dbc, log)),
 	))
 
@@ -78,7 +78,7 @@ func SetupRoutes(router *httprouter.Router, dbc *adaptor.PostgresClient, auth au
 
 	// User handlers
 	router.POST("/login", handler.LoginHandler(dbc, auth, log))
-	router.POST("/signup", handler.RegisterHandler(dbc, log))
+	router.POST("/register", handler.RegisterHandler(dbc, log))
 }
 
 // parseConfig parses the config file and returns the config object
