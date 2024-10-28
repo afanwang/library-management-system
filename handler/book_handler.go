@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"runtime/debug"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -16,6 +17,9 @@ import (
 )
 
 var limiter = rate.NewLimiter(1, 5) // 1 request per second, burst of 5
+
+// mu is a mutex for any operations that involves with Book
+var mu sync.Mutex
 
 // NewServer creates a new HTTP server
 func NewServer(port int, router http.Handler) *http.Server {
@@ -86,6 +90,8 @@ func UpdateBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.
 		}
 		book.ID = int32(bookID)
 
+		mu.Lock()
+		defer mu.Unlock()
 		if err := dbc.UpdateBook(r.Context(), book); err != nil {
 			http.Error(w, fmt.Sprintf("Error updating book: %v", err), http.StatusInternalServerError)
 			return
@@ -115,8 +121,8 @@ func BorrowBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.
 			return
 		}
 
-		// check number of copy first
-
+		mu.Lock()
+		defer mu.Unlock()
 		if err := dbc.BorrowBook(r.Context(), int32(userID), int32(bookID)); err != nil {
 			http.Error(w, fmt.Sprintf("Error borrowing book: %v", err), http.StatusInternalServerError)
 			return
@@ -140,6 +146,8 @@ func DeleteBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.
 			return
 		}
 
+		mu.Lock()
+		defer mu.Unlock()
 		if err := dbc.DeleteBook(r.Context(), int32(bookID)); err != nil {
 			http.Error(w, fmt.Sprintf("Error deleting book: %v", err), http.StatusInternalServerError)
 			return
@@ -169,6 +177,8 @@ func ReturnBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.
 			return
 		}
 
+		mu.Lock()
+		defer mu.Unlock()
 		if err := dbc.ReturnBook(r.Context(), int32(userID), int32(bookID)); err != nil {
 			http.Error(w, fmt.Sprintf("Error returning book: %v", err), http.StatusInternalServerError)
 			return
@@ -186,6 +196,8 @@ func GetAllBooksHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter
 			return
 		}
 
+		mu.Lock()
+		defer mu.Unlock()
 		books, err := dbc.ListBooks(r.Context())
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error fetching books: %v", err), http.StatusInternalServerError)
@@ -210,6 +222,8 @@ func ViewBorrowedBooksHandler(dbc *adaptor.PostgresClient, log *log.Logger) http
 			return
 		}
 
+		mu.Lock()
+		defer mu.Unlock()
 		books, err := dbc.ListBorrowedBooks(r.Context(), int32(userID))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error fetching books: %v", err), http.StatusInternalServerError)

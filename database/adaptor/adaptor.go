@@ -154,7 +154,6 @@ func (p *PostgresClient) ReturnBook(ctx context.Context, userID int32, bookID in
 func (p *PostgresClient) BorrowBook(ctx context.Context, userID int32, bookID int32) error {
 	return p.execTx(ctx, func(q *db.Queries) error {
 		// check number of copy first
-
 		numCopy, err := q.GetAvailableCopies(ctx, bookID)
 		if err != nil {
 			return err
