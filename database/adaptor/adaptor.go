@@ -123,11 +123,29 @@ func (p *PostgresClient) UpdateBook(ctx context.Context, book db.EditBookParams)
 	})
 }
 
-func (p *PostgresClient) CreateBook(ctx context.Context, book db.AddBookParams) error {
-	return p.execTx(ctx, func(q *db.Queries) error {
-		err := q.AddBook(ctx, book)
+func (p *PostgresClient) CreateBook(ctx context.Context, book db.AddBookParams, author db.Author) error {
+	// Add book
+	bookId, err := p.queries.AddBook(ctx, book)
+	if err != nil {
 		return err
+	}
+
+	// Add author
+	authorId, err := p.queries.AddAuthor(ctx, db.AddAuthorParams{
+		Name: author.Name,
+		Bio:  author.Bio,
 	})
+	if err != nil {
+		return err
+	}
+
+	// Add book author
+	err = p.queries.AddBookAuthor(ctx, db.AddBookAuthorParams{
+		BookID:   bookId,
+		AuthorID: authorId,
+	})
+	return err
+
 }
 
 func (p *PostgresClient) ListBooks(ctx context.Context) ([]db.ListBooksWithAuthorsRow, error) {
@@ -185,9 +203,7 @@ func (p *PostgresClient) GetUserByEmail(ctx context.Context, email string) (db.U
 	return p.queries.GetUserByEmail(ctx, email)
 }
 
-func (p *PostgresClient) CreateUser(ctx context.Context, name string, email string, role string, passwordhash string) error {
-	return p.execTx(ctx, func(q *db.Queries) error {
-		_, err := q.CreateUser(ctx, db.CreateUserParams{Name: pgtype.Text{String: name, Valid: true}, Email: email, Role: role, PasswordHash: passwordhash})
-		return err
-	})
+func (p *PostgresClient) CreateUser(ctx context.Context, name string, email string, role string, passwordhash string, nonce string) error {
+	_, err := p.queries.CreateUser(ctx, db.CreateUserParams{Name: pgtype.Text{String: name, Valid: true}, Email: email, Role: role, PasswordHash: passwordhash, Nonce: nonce})
+	return err
 }

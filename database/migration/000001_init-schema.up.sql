@@ -7,23 +7,23 @@ CREATE TABLE IF NOT EXISTS users (
     "name" VARCHAR(255),
     -- role = admin or user
     "role" VARCHAR(10) NOT NULL,
-    -- TODO: change to web3 for authentication
-    password_hash TEXT NOT NULL,
-    "nonce" TEXT NOT NULL
+    -- nonce or password hash
+    password_hash VARCHAR(255) NOT NULL,
+    "nonce" VARCHAR(255) NOT NULL
 );
 
 -- Book aurhors
 CREATE TABLE IF NOT EXISTS authors (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    bio TEXT
+    bio TEXT NOT NULL
 );
 
 -- Book
 CREATE TABLE IF NOT EXISTS books (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    description TEXT,
+    description TEXT NOT NULL,
     num_copy INT NOT NULL
 );
 
@@ -74,7 +74,6 @@ VALUES (
     '789101'
 );
 
--- Insert some authors
 -- Insert authors
 INSERT INTO authors (name, bio) VALUES
 ('Haruki Murakami', 'A renowned Japanese author known for surreal and magical realism works.'),
@@ -95,9 +94,9 @@ INSERT INTO books (title, num_copy) VALUES
 -- Insert book-author relationships
 -- Insert records into the book_authors table
 INSERT INTO book_authors (book_id, author_id) VALUES
-(1, 1),  -- 'Kafka on the Shore' by Haruki Murakami
-(2, 1),  -- 'Norwegian Wood' by Haruki Murakami
-(3, 2),  -- 'Pride and Prejudice' by Jane Austen
-(4, 3),  -- '1984' by George Orwell
-(5, 4),  -- 'Harry Potter and the Sorcerers Stone' by J.K. Rowling
-(6, 5);  -- 'The Adventures of Tom Sawyer' by Mark Twain
+(1, 1),
+(2, 1),
+(3, 2),
+(4, 3),
+(5, 4),
+(6, 5);

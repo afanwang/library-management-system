@@ -22,12 +22,13 @@ const (
 // Adapt function to convert httprouter.Handle to http.HandlerFunc
 func Adapt(handler httprouter.Handle) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, err := r.Cookie("token")
-		if err != nil {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
+		// Proceed to the original handler if token is valid
 		params := httprouter.ParamsFromContext(r.Context())
 		handler(w, r, params)
 	}
@@ -35,13 +36,13 @@ func Adapt(handler httprouter.Handle) http.HandlerFunc {
 
 func JWTAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("token")
-		if err != nil {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" || len(authHeader) < 7 || authHeader[:7] != "Bearer " {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		tokenStr := cookie.Value
+		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 		claims := &Claims{}
 
 		token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
@@ -113,15 +114,16 @@ func handleLogin(db *adaptor.PostgresClient, a auth.Authenticator, w http.Respon
 		},
 	}
 
-	cookieToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := cookieToken.SignedString(auth.JwtKey)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(auth.JwtKey)
 	if err != nil {
 		http.Error(w, "Error creating token", http.StatusInternalServerError)
 		return
 	}
 
+	// Store JWT token in cookie
 	http.SetCookie(w, &http.Cookie{
-		Name:    "cookieToken",
+		Name:    "token",
 		Value:   tokenString,
 		Expires: expirationTime,
 	})
@@ -153,7 +155,7 @@ func handleRegister(db *adaptor.PostgresClient, w http.ResponseWriter, r *http.R
 	}
 
 	// Basic validation
-	if strings.TrimSpace(req.Name) == "" || strings.TrimSpace(req.Email) == "" || len(req.Role) == 0 {
+	if strings.TrimSpace(req.Name) == "" || strings.TrimSpace(req.Email) == "" || req.Role == "" {
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
@@ -170,7 +172,8 @@ func handleRegister(db *adaptor.PostgresClient, w http.ResponseWriter, r *http.R
 	defer cancel()
 
 	// Insert user into the database
-	err = db.CreateUser(ctx, req.Name, req.Email, req.Role, string(hashedPassword))
+	// Set nonce to an empty string
+	err = db.CreateUser(ctx, req.Name, req.Email, req.Role, string(hashedPassword), "")
 	if err != nil {
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return

@@ -21,6 +21,14 @@ var limiter = rate.NewLimiter(1, 5) // 1 request per second, burst of 5
 // mu is a mutex for any operations that involves with Book
 var mu sync.Mutex
 
+type AddBookRequest struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Copies      int32  `json:"copies"`
+	Author      string `json:"author"`
+	AuthorBio   string `json:"author_bio"`
+}
+
 // NewServer creates a new HTTP server
 func NewServer(port int, router http.Handler) *http.Server {
 	server := http.Server{
@@ -53,13 +61,16 @@ func AddANewBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter
 			return
 		}
 
-		var book db.AddBookParams
-		if err := json.NewDecoder(r.Body).Decode(&book); err != nil {
+		var addBookReq AddBookRequest
+		if err := json.NewDecoder(r.Body).Decode(&addBookReq); err != nil {
 			http.Error(w, "Invalid request payload", http.StatusBadRequest)
 			return
 		}
 
-		if err := dbc.CreateBook(r.Context(), book); err != nil {
+		if err := dbc.CreateBook(
+			r.Context(),
+			db.AddBookParams{Title: addBookReq.Title, Description: addBookReq.Description, NumCopy: addBookReq.Copies},
+			db.Author{Name: addBookReq.Author, Bio: addBookReq.AuthorBio}); err != nil {
 			http.Error(w, fmt.Sprintf("Error creating book: %v", err), http.StatusInternalServerError)
 			return
 		}

@@ -57,7 +57,8 @@ func (config *appConfig) Validate() error {
 
 func SetupRoutes(router *httprouter.Router, dbc *adaptor.PostgresClient, auth auth.Authenticator, log *log.Logger) {
 	// Book handlers with middleware for Role-based authorization
-	router.Handler("POST", "/admin/books/:book_id", handler.JWTAuthMiddleware(
+	// For Admin Users
+	router.Handler("POST", "/admin/books", handler.JWTAuthMiddleware(
 		handler.Adapt(handler.AddANewBookHandler(dbc, log)),
 	))
 
@@ -65,16 +66,15 @@ func SetupRoutes(router *httprouter.Router, dbc *adaptor.PostgresClient, auth au
 		handler.Adapt(handler.UpdateBookHandler(dbc, log)),
 	))
 
-	router.Handler("DELETE", "/books/:book_id", handler.JWTAuthMiddleware(
+	router.Handler("DELETE", "/admin/books/:book_id", handler.JWTAuthMiddleware(
 		handler.Adapt(handler.DeleteBookHandler(dbc, log)),
 	))
 
-	// None-role-based handlers
-	router.POST("/books", handler.GetAllBooksHandler(dbc, log))
-	router.PUT("/books/:book_id", handler.BorrowBookHandler(dbc, log))
-	router.POST("/borrow/:user_id/:book_id", handler.BorrowBookHandler(dbc, log))
-	router.POST("/return/:user_id/:book_id", handler.ReturnBookHandler(dbc, log))
-	router.POST("/return/:user_id", handler.ViewBorrowedBooksHandler(dbc, log))
+	// For all logged-in users
+	router.Handler("GET", "/books", handler.Adapt(handler.GetAllBooksHandler(dbc, log)))
+	router.Handler("POST", "/books/borrow/:user_id/:book_id", handler.Adapt(handler.BorrowBookHandler(dbc, log)))
+	router.Handler("POST", "/books/return/:user_id/:book_id", handler.Adapt(handler.ReturnBookHandler(dbc, log)))
+	router.Handler("GET", "/books/:user_id", handler.Adapt(handler.ViewBorrowedBooksHandler(dbc, log)))
 
 	// User handlers
 	router.POST("/login", handler.LoginHandler(dbc, auth, log))

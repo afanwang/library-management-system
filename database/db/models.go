@@ -11,13 +11,13 @@ import (
 type Author struct {
 	ID   int32
 	Name string
-	Bio  pgtype.Text
+	Bio  string
 }
 
 type Book struct {
 	ID          int32
 	Title       string
-	Description pgtype.Text
+	Description string
 	NumCopy     int32
 }
 

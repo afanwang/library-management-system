@@ -11,7 +11,25 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const addBook = `-- name: AddBook :exec
+const addAuthor = `-- name: AddAuthor :one
+INSERT INTO authors (name, bio) 
+VALUES ($1, $2)
+RETURNING id
+`
+
+type AddAuthorParams struct {
+	Name string
+	Bio  string
+}
+
+func (q *Queries) AddAuthor(ctx context.Context, arg AddAuthorParams) (int32, error) {
+	row := q.db.QueryRow(ctx, addAuthor, arg.Name, arg.Bio)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
+const addBook = `-- name: AddBook :one
 INSERT INTO books (title, description, num_copy) 
 VALUES ($1, $2, $3)
 RETURNING id
@@ -19,14 +37,16 @@ RETURNING id
 
 type AddBookParams struct {
 	Title       string
-	Description pgtype.Text
+	Description string
 	NumCopy     int32
 }
 
 // Usecase: add a new book
-func (q *Queries) AddBook(ctx context.Context, arg AddBookParams) error {
-	_, err := q.db.Exec(ctx, addBook, arg.Title, arg.Description, arg.NumCopy)
-	return err
+func (q *Queries) AddBook(ctx context.Context, arg AddBookParams) (int32, error) {
+	row := q.db.QueryRow(ctx, addBook, arg.Title, arg.Description, arg.NumCopy)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const addBookAuthor = `-- name: AddBookAuthor :exec
@@ -56,8 +76,8 @@ func (q *Queries) BorrowBook(ctx context.Context, id int32) error {
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (name, email, role, password_hash) 
-VALUES ($1, $2, $3, $4)
+INSERT INTO users (name, email, role, password_hash, nonce) 
+VALUES ($1, $2, $3, $4, $5)
 RETURNING id, name, email, role
 `
 
@@ -66,6 +86,7 @@ type CreateUserParams struct {
 	Email        string
 	Role         string
 	PasswordHash string
+	Nonce        string
 }
 
 type CreateUserRow struct {
@@ -81,6 +102,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		arg.Email,
 		arg.Role,
 		arg.PasswordHash,
+		arg.Nonce,
 	)
 	var i CreateUserRow
 	err := row.Scan(
@@ -112,7 +134,7 @@ WHERE id = $1
 type EditBookParams struct {
 	ID          int32
 	Title       string
-	Description pgtype.Text
+	Description string
 	NumCopy     int32
 }
 
@@ -186,7 +208,7 @@ JOIN authors a ON ba.author_id = a.id
 type ListBooksWithAuthorsRow struct {
 	ID          int32
 	Title       string
-	Description pgtype.Text
+	Description string
 	AuthorName  string
 }
 
@@ -227,7 +249,7 @@ WHERE bb.user_id = $1 AND bb.returned_at IS NULL
 type ListBorrowedBooksRow struct {
 	ID          int32
 	Title       string
-	Description pgtype.Text
+	Description string
 	BorrowedAt  pgtype.Timestamp
 	ReturnedAt  pgtype.Timestamp
 }
