@@ -5,7 +5,8 @@ import (
 	"context"
 )
 
-var JwtKey = []byte("your-secret-key")
+// Use your secret key
+var JwtKey = []byte("4e3f9b9a4a63475e1b6c8a9e0f78b5fc8e6a9b7e06e9dbedf89b4d781c1e5ad4")
 
 type LoginRequest struct {
 	// For email-based authentication

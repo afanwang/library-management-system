@@ -200,16 +200,22 @@ func ReturnBookHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.
 }
 
 // GetBooksHandler retrieves all books.
-func GetAllBooksHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func GetBooksByIDHandler(dbc *adaptor.PostgresClient, log *log.Logger) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		if !limiter.Allow() {
 			http.Error(w, "Too many requests", http.StatusTooManyRequests)
 			return
 		}
 
+		bookID, err := strconv.Atoi(ps.ByName("book_id"))
+		if err != nil {
+			http.Error(w, "Invalid book ID", http.StatusBadRequest)
+			return
+		}
+
 		mu.Lock()
 		defer mu.Unlock()
-		books, err := dbc.ListBooks(r.Context())
+		books, err := dbc.GetBookByID(r.Context(), int32(bookID))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Error fetching books: %v", err), http.StatusInternalServerError)
 			return

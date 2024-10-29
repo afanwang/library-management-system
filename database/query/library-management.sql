@@ -50,13 +50,13 @@ UPDATE borrowed_books
 SET returned_at = CURRENT_TIMESTAMP
 WHERE user_id = $1 AND book_id = $2 AND returned_at IS NULL;
 
--- Usercase: list all books with their authors (So user can borrow)
--- TODO: it may be to big. Need to add pagination.
--- name: ListBooksWithAuthors :many
-SELECT b.id, b.title, b.description, a.name AS author_name 
+-- Usercase: get book with ID with their authors (So user can borrow)
+-- name: GetBookWithAuthorsByID :one
+SELECT b.id, b.title, b.description, b.num_copy, a.name AS author_name 
 FROM books b
 JOIN book_authors ba ON b.id = ba.book_id
-JOIN authors a ON ba.author_id = a.id;
+JOIN authors a ON ba.author_id = a.id
+WHERE b.id = $1;
 
 -- name: ListBorrowedBooks :many
 SELECT b.id, b.title, b.description, bb.borrowed_at, bb.returned_at

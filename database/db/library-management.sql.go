@@ -163,6 +163,36 @@ func (q *Queries) GetAvailableCopies(ctx context.Context, id int32) (int32, erro
 	return num_copy, err
 }
 
+const getBookWithAuthorsByID = `-- name: GetBookWithAuthorsByID :one
+SELECT b.id, b.title, b.description, b.num_copy, a.name AS author_name 
+FROM books b
+JOIN book_authors ba ON b.id = ba.book_id
+JOIN authors a ON ba.author_id = a.id
+WHERE b.id = $1
+`
+
+type GetBookWithAuthorsByIDRow struct {
+	ID          int32
+	Title       string
+	Description string
+	NumCopy     int32
+	AuthorName  string
+}
+
+// Usercase: get book with ID with their authors (So user can borrow)
+func (q *Queries) GetBookWithAuthorsByID(ctx context.Context, id int32) (GetBookWithAuthorsByIDRow, error) {
+	row := q.db.QueryRow(ctx, getBookWithAuthorsByID, id)
+	var i GetBookWithAuthorsByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Description,
+		&i.NumCopy,
+		&i.AuthorName,
+	)
+	return i, err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, email, name, role, password_hash, nonce
 FROM users 
@@ -196,47 +226,6 @@ type InsertBorrowedBookParams struct {
 func (q *Queries) InsertBorrowedBook(ctx context.Context, arg InsertBorrowedBookParams) error {
 	_, err := q.db.Exec(ctx, insertBorrowedBook, arg.UserID, arg.BookID)
 	return err
-}
-
-const listBooksWithAuthors = `-- name: ListBooksWithAuthors :many
-SELECT b.id, b.title, b.description, a.name AS author_name 
-FROM books b
-JOIN book_authors ba ON b.id = ba.book_id
-JOIN authors a ON ba.author_id = a.id
-`
-
-type ListBooksWithAuthorsRow struct {
-	ID          int32
-	Title       string
-	Description string
-	AuthorName  string
-}
-
-// Usercase: list all books with their authors (So user can borrow)
-// TODO: it may be to big. Need to add pagination.
-func (q *Queries) ListBooksWithAuthors(ctx context.Context) ([]ListBooksWithAuthorsRow, error) {
-	rows, err := q.db.Query(ctx, listBooksWithAuthors)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListBooksWithAuthorsRow
-	for rows.Next() {
-		var i ListBooksWithAuthorsRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Title,
-			&i.Description,
-			&i.AuthorName,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const listBorrowedBooks = `-- name: ListBorrowedBooks :many

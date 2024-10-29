@@ -148,8 +148,8 @@ func (p *PostgresClient) CreateBook(ctx context.Context, book db.AddBookParams, 
 
 }
 
-func (p *PostgresClient) ListBooks(ctx context.Context) ([]db.ListBooksWithAuthorsRow, error) {
-	return p.queries.ListBooksWithAuthors(ctx)
+func (p *PostgresClient) GetBookByID(ctx context.Context, bookID int32) (db.GetBookWithAuthorsByIDRow, error) {
+	return p.queries.GetBookWithAuthorsByID(ctx, bookID)
 }
 
 func (p *PostgresClient) ReturnBook(ctx context.Context, userID int32, bookID int32) error {

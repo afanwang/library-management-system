@@ -5,6 +5,7 @@ import (
 	"app/database/adaptor"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -34,6 +35,22 @@ func Adapt(handler httprouter.Handle) http.HandlerFunc {
 	}
 }
 
+// Function to extract claims from a token string
+func extractClaims(tokenStr string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return auth.JwtKey, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
+	}
+	return nil, fmt.Errorf("invalid token")
+}
+
 func JWTAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -45,12 +62,14 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 		claims := &Claims{}
 
-		token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
-			return auth.JwtKey, nil
-		})
-
-		if err != nil || !token.Valid {
+		claim, err := extractClaims(tokenStr)
+		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		if claim.Role != "admin" {
+			http.Error(w, "Unauthorized", http.StatusForbidden)
 			return
 		}
 

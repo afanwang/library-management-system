@@ -83,13 +83,13 @@ INSERT INTO authors (name, bio) VALUES
 ('Mark Twain', 'An American writer, humorist, and creator of Tom Sawyer and Huckleberry Finn.');
 
 -- Insert books with existing author references
-INSERT INTO books (title, num_copy) VALUES
-('Kafka on the Shore', 3),
-('Norwegian Wood', 5),
-('Pride and Prejudice', 2),
-('1984', 4),
-('Harry Potter and the Sorcerer Stone', 7),
-('The Adventures of Tom Sawyer', 3);
+INSERT INTO books (title, description, num_copy) VALUES
+('Kafka on the Shore', "A classic", 100),
+('Norwegian Wood', "Another classic", 100),
+('Pride and Prejudice', "A classic", 100),
+('1984', "A dystopian novel", 100),
+('Harry Potter and the Sorcerer Stone', "A classic", 100),
+('The Adventures of Tom Sawyer', "A classic", 100);
 
 -- Insert book-author relationships
 -- Insert records into the book_authors table

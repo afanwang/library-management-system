@@ -1,7 +1,9 @@
 package test
 
 import (
+	"app/database/db"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -98,6 +100,7 @@ func (suite *APITestSuite) TestLoginAPI() {
 	suite.T().Logf("user token: %s", suite.userToken)
 }
 
+// Register a new user, also test the rate-limit function.
 func (suite *APITestSuite) TestRegisterAPI() {
 	// generate a random email
 	rand.Seed(uint64(time.Now().UnixNano()))
@@ -110,6 +113,7 @@ func (suite *APITestSuite) TestRegisterAPI() {
 		"role": "user"
 	}`, email))
 
+	time.Sleep(1 * time.Second)
 	resp, err := http.Post("http://localhost:8080/register", "application/json", bytes.NewBuffer(reqBody))
 
 	suite.NoError(err)
@@ -165,19 +169,114 @@ func (suite *APITestSuite) TestAddNewBookAsAdminAPI() {
 	defer resp.Body.Close()
 }
 
-func (suite *APITestSuite) TestBorrowBookAPI() {
-	req, err := http.NewRequest("POST", "http://localhost:8080/books/borrow/1/2", nil)
+// Borrow and return books API tests
+// 1. Get book copy count before borowing
+// 2. Borrow book 3 times
+// 3. Now the book count is cntBeforeBrrow - 3
+// 4. Return book 3 times
+// 5. Now the book count is cntBeforeBrrow
+func (suite *APITestSuite) TestBorrowReturnBookAPIs() {
+	// === Test Borrowing Books APIs
+	// Get available book count
+	book := suite.getBooksByID(2)
+	cntBeforeBrrow := book.NumCopy
+	suite.T().Log("cntBeforeBrrow = ", cntBeforeBrrow)
+
+	// // Borrow book 3 times
+	for i := 0; i < 3; i++ {
+		// To avoid too many requests rate limiting
+		time.Sleep(1 * time.Second)
+		// UserID = 1, BookID = 2
+		req, err := http.NewRequest("POST", "http://localhost:8080/books/borrow/1/2", nil)
+		suite.NoError(err)
+
+		req.Header.Set("Authorization", "Bearer "+suite.userToken)
+		resp, err := suite.client.Do(req)
+		suite.NoError(err)
+		suite.Equal(http.StatusOK, resp.StatusCode)
+	}
+
+	// Get available book count after borrowing
+	book = suite.getBooksByID(2)
+	cntAfterBorrow := book.NumCopy
+	suite.Equal(cntBeforeBrrow-3, cntAfterBorrow)
+
+	// Check User's borrowed book count
+	req, err := http.NewRequest("GET", "http://localhost:8080/users/1/books", nil)
 	suite.NoError(err)
 
+	req.Header.Set("Authorization", "Bearer "+suite.userToken)
 	resp, err := suite.client.Do(req)
 	suite.NoError(err)
-	suite.Equal(http.StatusUnauthorized, resp.StatusCode)
+	suite.Equal(http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
 
-	// Use user token to borrow book
+	var borrowedBooks []db.ListBorrowedBooksRow
+	err = json.NewDecoder(resp.Body).Decode(&borrowedBooks)
+	suite.NoError(err)
+	// There are 3 borrowed books
+	suite.Equal(3, len(borrowedBooks))
+
+	// === Test Returning Books APIs
+	// Return book 3 times
+	for i := 0; i < 3; i++ {
+		// To avoid too many requests rate limiting
+		time.Sleep(1 * time.Second)
+		// UserID = 1, BookID = 2
+		req, err := http.NewRequest("POST", "http://localhost:8080/books/return/1/2", nil)
+		suite.NoError(err)
+
+		req.Header.Set("Authorization", "Bearer "+suite.userToken)
+		resp, err := suite.client.Do(req)
+		suite.NoError(err)
+		suite.Equal(http.StatusOK, resp.StatusCode)
+	}
+
+	time.Sleep(1 * time.Second)
+	// Get available book count after returning
+	book = suite.getBooksByID(2)
+	cntAfterReturn := book.NumCopy
+	suite.Equal(cntAfterBorrow+3, cntAfterReturn)
+
+	// Check User's borrowed book count
+	req, err = http.NewRequest("GET", "http://localhost:8080/users/1/books", nil)
+	suite.NoError(err)
+
 	req.Header.Set("Authorization", "Bearer "+suite.userToken)
+	time.Sleep(1 * time.Second)
 	resp, err = suite.client.Do(req)
 	suite.NoError(err)
 	suite.Equal(http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&borrowedBooks)
+	suite.NoError(err)
+	// There are 0 borrowed books
+	suite.Equal(0, len(borrowedBooks))
+
+	// After returning all books, the book count should be the original count
+	time.Sleep(1 * time.Second)
+	book = suite.getBooksByID(2)
+	suite.Equal(cntBeforeBrrow, book.NumCopy)
+}
+
+func (suite *APITestSuite) getBooksByID(bookID int) db.GetBookWithAuthorsByIDRow {
+	// Get current borrowed book for bookID
+	url := fmt.Sprintf("http://localhost:8080/books/%d", bookID)
+
+	req, err := http.NewRequest("GET", url, nil)
+	suite.NoError(err)
+	req.Header.Set("Authorization", "Bearer "+suite.userToken)
+	time.Sleep(1 * time.Second)
+	resp, err := suite.client.Do(req)
+	suite.NoError(err)
+	suite.Equal(http.StatusOK, resp.StatusCode)
+	defer resp.Body.Close()
+
+	var book db.GetBookWithAuthorsByIDRow
+	err = json.NewDecoder(resp.Body).Decode(&book)
+	suite.NoError(err)
+	return book
 }
 
 func (suite *APITestSuite) TestAdminAccessWithRegularUserToken() {
@@ -190,7 +289,9 @@ func (suite *APITestSuite) TestAdminAccessWithRegularUserToken() {
 	suite.NoError(err)
 
 	req.Header.Set("Authorization", "Bearer "+suite.userToken)
+	time.Sleep(1 * time.Second)
 	resp, err := suite.client.Do(req)
+	defer resp.Body.Close()
 
 	suite.NoError(err)
 	// Regular user shouldn't access admin routes
@@ -202,17 +303,17 @@ func (suite *APITestSuite) TestUnauthorizedAccess() {
 	suite.NoError(err)
 
 	resp, err := suite.client.Do(req)
+	defer resp.Body.Close()
 	suite.NoError(err)
 	suite.Equal(http.StatusNotFound, resp.StatusCode)
-	defer resp.Body.Close()
 
-	req, err = http.NewRequest("GET", "http://localhost:8080/books", nil)
+	req, err = http.NewRequest("GET", "http://localhost:8080/admin/books", nil)
 	suite.NoError(err)
 
 	resp, err = suite.client.Do(req)
-	suite.NoError(err)
-	suite.Equal(http.StatusUnauthorized, resp.StatusCode)
 	defer resp.Body.Close()
+	suite.NoError(err)
+	suite.Equal(http.StatusMethodNotAllowed, resp.StatusCode)
 }
 
 func TestAPISuite(t *testing.T) {

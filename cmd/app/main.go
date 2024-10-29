@@ -71,10 +71,10 @@ func SetupRoutes(router *httprouter.Router, dbc *adaptor.PostgresClient, auth au
 	))
 
 	// For all logged-in users
-	router.Handler("GET", "/books", handler.Adapt(handler.GetAllBooksHandler(dbc, log)))
+	router.Handler("GET", "/books/:book_id", handler.Adapt(handler.GetBooksByIDHandler(dbc, log)))
 	router.Handler("POST", "/books/borrow/:user_id/:book_id", handler.Adapt(handler.BorrowBookHandler(dbc, log)))
 	router.Handler("POST", "/books/return/:user_id/:book_id", handler.Adapt(handler.ReturnBookHandler(dbc, log)))
-	router.Handler("GET", "/books/:user_id", handler.Adapt(handler.ViewBorrowedBooksHandler(dbc, log)))
+	router.Handler("GET", "/users/:user_id/books", handler.Adapt(handler.ViewBorrowedBooksHandler(dbc, log)))
 
 	// User handlers
 	router.POST("/login", handler.LoginHandler(dbc, auth, log))
