@@ -1,3 +1,14 @@
+# Table of Contents
+
+- [Part 1](#part-1)
+   - [Design](#design)
+   - [List of Features](#list-of-features)
+   - [Api Tests](#api-tests)
+- [Part 2](#part-2)
+   - [Version 1 Result](#version-1)
+   - [Version 2 Result](#version-2)
+- [Developer Setup](#setup)
+
 # Part 1
 ## Library management system
 
@@ -23,6 +34,7 @@ See the detailed list of features and their progress.
 - User provides their Ethereum address, server responds with a nonce tied to the user, and user signs the nonce with their Ethereum private key. Client sends the signature to the server, server verifies the signature and authenticates the user.
 - Added an interface to support Password-auth and Web3 auth.
 
+## List of Features
 | **Module**         | **Feature**               | **Status**    |
 |---------------------|---------------------------|---------------|
 | **Model**          		 	
@@ -45,16 +57,14 @@ See the detailed list of features and their progress.
 |                     | Only Admin can Delete Book     |  ✅ Done    |
 |                     | Only Admin can Edit Book     |  ✅ Done     |
 | **Documentation** |Documentation of Setup and Test     |  ✅ Done        |
-| **Test**  | Write Simple Test       | ✅ Done      |
+| **Test**  | API Integration Tests       | ✅ Done      |
 | **Bonus Features**  
 |                     | API Rate Limiting         | ✅ Done      |
 |                     | User Registration/Ligin using Web3              | ✅ Done     |
-|                     | Unit Tests test                | ❌ Not Done    |
 
 
-### Manual Tests
-
-### Unit tests
+### Api Tests
+Refer to `api-integration-test.go`
 
 
 # Part 2
@@ -126,5 +136,24 @@ Time: 0h:00m:06s
 ## Setup
 Refer to Makefile
 
-## Test
-Refer to `api_integration_test.go`
+### Database related
+```
+make postgres
+make createdb
+make migrate
+```
+### Server
+```
+make docker_build
+```
+
+OR 
+```
+make server
+```
+
+Then run the tests:
+```
+cd test
+go test -v -run TestAPISuite
+```
