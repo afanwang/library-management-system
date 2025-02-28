@@ -117,10 +117,7 @@ func (p *PostgresClient) DeleteBook(ctx context.Context, id int32) error {
 }
 
 func (p *PostgresClient) UpdateBook(ctx context.Context, book db.EditBookParams) error {
-	return p.execTx(ctx, func(q *db.Queries) error {
-		err := q.EditBook(ctx, book)
-		return err
-	})
+	return p.queries.EditBook(ctx, book)
 }
 
 func (p *PostgresClient) CreateBook(ctx context.Context, book db.AddBookParams, author db.Author) error {

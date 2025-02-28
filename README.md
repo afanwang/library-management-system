@@ -1,14 +1,149 @@
 # Table of Contents
+- [Problem Statement](#problem-statement)
+   - [Part 1](#part-1) 
+   - [Part 2](#part-2) 
+   - [Expectations](#expectations)
+- [Implementation](#implementation)
+   - [Part 1](#part-1-1)
+      - [Design](#design)
+      - [List of Features](#list-of-features)
+      - [Api Tests](#api-tests)
+   - [Part 2](#part-2-1)
+      - [Version 1 Result](#version-1)
+      - [Version 2 Result](#version-2)
+   - [Developer Setup](#setup)
 
-- [Part 1](#part-1)
-   - [Design](#design)
-   - [List of Features](#list-of-features)
-   - [Api Tests](#api-tests)
-- [Part 2](#part-2)
-   - [Version 1 Result](#version-1)
-   - [Version 2 Result](#version-2)
-- [Developer Setup](#setup)
+# Problem Statement
+## Part 1
+### Objective
 
+Build a "Library Management System" backend. Design and implement
+a RESTful API and an associated data model for a system that allows users to
+manage books in a library.
+
+### Requirements:
+1. Entities:
+   - User: Represents a registered user in the system.
+   - Book: Represents a book in the library. Each book can have several
+copies.
+   - Author: Each book may have multiple authors.
+
+2. Functionalities:
+   - User:
+      - Sign up and login using web3 credentials (Optional, Extra-credit)
+      - View their borrowed books.
+   - Book:
+      -  Add a new book.
+      - Edit a book's details.
+      - Delete a book.
+      - Borrow a book.
+      - Return a borrowed book.
+
+3. Roles:
+      - Think about different roles in the system. Admin vs User. Different roles
+should have different access to the API endpoints.
+
+4. API Endpoints:
+   - User registration and login with web3 credentials.
+   - CRUD operations for Book.
+   - Endpoint to borrow and return books.
+
+5. Data Model:
+
+   Design the relational data model (ERD or table design) for the entities.
+Think about what fields each entity would have and the relationships
+between them.
+
+6. Bonus:
+   Implement a simple rate limiting mechanism for your API.
+
+7. Documentation:
+   - Include a README that:
+      - Describe your overall design thinking
+      - Details how to set up, run, and test your application.
+      - Documents the API endpoints and expected payloads.
+8. Test:
+
+   Add basic tests
+
+## Part 2
+Implement the functions below
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/common"
+)
+
+// Event Definition:
+// - An event is emitted by a smart contract during a transaction execution.
+// - Each event has a signature, which is a unique identifier for the type of event.
+// - Events are stored in the transaction receipt's logs.
+// - The event signature is the first topic (index 0) in the log entry.
+
+func getBlockByNumber(client *ethclient.Client, blockNumber *big.Int) (*types.Block, error) {
+	return client.BlockByNumber(context.Background(), blockNumber)
+}
+
+func getTransactionReceipt(client *ethclient.Client, txHash common.Hash) (*types.Receipt, error) {
+	return client.TransactionReceipt(context.Background(), txHash)
+}
+
+// Implement these functions
+func processBlock(client *ethclient.Client, blockNumber *big.Int) (map[string]int, error) {
+	// TODO: Implement this function to process a single block
+	// It should get the block, process all transactions, and return event counts (event sig -> count)
+	return nil, nil
+}
+
+func processBlockRange(client *ethclient.Client, start, end *big.Int) (map[string]int, error) {
+	// TODO: Implement this function to process a range of blocks
+	// It should use processBlock for each block in the range and aggregate the results
+	return nil, nil
+}
+
+func main() {
+	client, err := ethclient.Dial("https://rpc.odyssey.{some}rpc.io")
+	if err != nil {
+		log.Fatalf("Failed to connect to the Ethereum client: %v", err)
+	}
+
+	// Process the latest 10 blocks
+	latestBlock := uint64(170024)
+
+	start := new(big.Int).SetUint64(latestBlock - 9)
+	end := new(big.Int).SetUint64(latestBlock)
+
+	totalEventCount, err := processBlockRange(client, start, end)
+	if err != nil {
+		log.Fatalf("Failed to process block range: %v", err)
+	}
+
+	fmt.Println("Total event counts across the block range:")
+	for signature, count := range totalEventCount {
+		fmt.Printf("%s: %d\n", signature, count)
+	}
+}
+```
+
+## Expectations
+- Language: Golang.
+- Use any database you're comfortable with, but do mention why you made that choice.
+- Write clean, modular, and maintainable code. Think about potential scalability and
+maintainability issues. Make sure the design handle concurrent and large amounts of requests.
+- Make sure the book has several copies to borrow.
+- Approach it as you would for a real-world project. Think about validation, error
+handling, etc.
+- Live demo with working code.
+
+# Implementation
 # Part 1
 ## Library management system
 

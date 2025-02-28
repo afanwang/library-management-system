@@ -135,7 +135,7 @@ func processBlockRange(client *ethclient.Client, start, end *big.Int) (map[strin
 }
 
 func main() {
-	client, err := ethclient.Dial("https://testnet.storyrpc.io")
+	client, err := ethclient.Dial("https://testnet.[some]rpc.io")
 	if err != nil {
 		log.Fatalf("Failed to connect to the Ethereum client: %v", err)
 	}
